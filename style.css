@@ -228,7 +228,6 @@ details[open] summary::before {
   word-wrap: break-word; /* Prevent long names/times from overflowing */
   display: flex; /* Use flexbox for icon and text alignment */
   align-items: center; /* Vertically center icon and text */
-  gap: 8px; /* Add gap between icon wrapper and text */
 }
 .available-list li:last-child, .not-available-list li:last-child {
   border-bottom: none;
@@ -337,6 +336,62 @@ td:nth-child(6) {
     border: 1px dashed #5A5A5A; /* Dashed border to visually separate */
     border-radius: 4px;
     background-color: #2f2f2f; /* Slightly lighter background for nested sections */
+}
+
+/* NEW: Styles for the info button and tooltip in availability summary lists */
+.note-info-container {
+    position: absolute; /* Position relative to .icon-with-note-wrapper */
+    bottom: 0; /* Align button to bottom of icon wrapper */
+    right: 0; /* Align button to right of icon wrapper */
+}
+
+.info-note-btn {
+    background-color: #8C5A33; /* Earthy button color, distinct from availability status */
+    color: #E0E0E0;
+    border: 1px solid #3A2211;
+    border-radius: 50%; /* Round button */
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    font-family: 'Press Start 2P', cursive; /* Use pixel font */
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0; /* Prevent button from shrinking */
+    transition: background-color 0.2s;
+}
+
+.info-note-btn:hover {
+    background-color: #A06B42;
+}
+
+/* Hide the tooltip itself, as click will open a modal */
+.note-tooltip {
+    display: none; /* Hidden by default */
+    position: absolute;
+    top: 50%; /* Align vertically with the button */
+    left: 100%; /* Position to the right of the button */
+    transform: translate(10px, -50%); /* Offset from button and adjust for vertical center */
+    background-color: #2F2F2F;
+    border: 2px solid #5A5A5A;
+    padding: 8px;
+    border-radius: 4px;
+    color: #E0E0E0;
+    font-size: 0.7em; /* Smaller font for tooltip content */
+    max-width: 200px; /* Limit tooltip width */
+    word-wrap: break-word; /* Ensure long notes wrap */
+    z-index: 100; /* Ensure it appears above other elements */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    pointer-events: none; /* Allows mouse events to pass through to elements behind the tooltip */
+    text-align: left; /* Align text left within tooltip */
+}
+
+/* Show tooltip when hovering over the container (which includes the button) */
+.note-info-container:hover .note-tooltip {
+    /* Tooltip remains active for hover, but click also works */
+    display: block;
 }
 
 /* NEW: Styles for Discord Embed section */
@@ -550,18 +605,30 @@ tr[data-timezone-unset="true"] td.timezone-unset-visual input[type="checkbox"] {
 .people-filter-controls .filter-item-label {
     display: flex;
     align-items: center;
-    margin-bottom: 0; /* Remove existing margin-bottom as gap handles spacing */
+    margin-bottom: 5px;
     cursor: pointer;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     user-select: none; /* Prevent text selection on click */
-    padding: 4px 8px; /* Add some padding around each item */
-    border: 1px solid #4A4A4A; /* Border for each filter item */
-    border-radius: 4px;
-    background-color: #2f2f2f;
-    flex-shrink: 0; /* Prevent items from stretching excessively */
-    gap: 5px; /* Add a small gap between internal elements */
+}
+
+/* Specific wrapper for filter icons to control spacing and alignment */
+.people-filter-controls .filter-icon-wrapper {
+    position: relative; /* If needed for future small overlay/badge */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 5px; /* Space between icon and status button/text */
+    flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+.people-filter-controls .filter-icon {
+    width: 24px; /* Smaller icon size for filter list */
+    height: 24px;
+    object-fit: contain;
+    image-rendering: pixelated; /* sharp pixel icons */
+    margin: 0; /* Override default summary-icon margin-right, controlled by wrapper */
 }
 
 .people-filter-controls .filter-status-btn {
@@ -569,7 +636,7 @@ tr[data-timezone-unset="true"] td.timezone-unset-visual input[type="checkbox"] {
     height: 20px;
     min-width: unset; /* Override button min-width */
     padding: 0;
-    margin: 0; /* Remove default button margin, let flex gap handle it */
+    margin: 0 8px 0 0; /* Space between button and name */
     background-color: #4A4A4A; /* Neutral gray */
     color: #E0E0E0;
     border: 2px solid #5A5A5A;
@@ -581,16 +648,6 @@ tr[data-timezone-unset="true"] td.timezone-unset-visual input[type="checkbox"] {
     font-weight: bold;
     flex-shrink: 0;
     transition: background-color 0.1s, border-color 0.1s, color 0.1s;
-}
-
-/* New style for icons in the filter */
-.people-filter-controls .filter-person-icon {
-    width: 24px; /* Smaller size for filter icons */
-    height: 24px;
-    object-fit: contain;
-    image-rendering: pixelated;
-    margin: 0; /* Remove explicit margin, let flex gap handle it */
-    flex-shrink: 0; /* Prevent shrinking */
 }
 
 /* State for 'online' */
@@ -629,7 +686,6 @@ tr[data-timezone-unset="true"] td.timezone-unset-visual input[type="checkbox"] {
   align-items: center;
   padding: 5px 0;
   border-bottom: 1px dotted #5A5A5A;
-  gap: 8px; /* Consistent gap for summary lists */
 }
 .people-list-dropdown ul li:last-child {
   border-bottom: none;
@@ -690,9 +746,7 @@ tr[data-timezone-unset="true"] td.timezone-unset-visual input[type="checkbox"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px; /* Set fixed width to contain the icon */
-  height: 32px; /* Set fixed height to contain the icon */
-  flex-shrink: 0; /* Prevents this wrapper from shrinking */
+  margin-right: 8px;    /* space between icon and text */
 }
 
 .summary-icon {
@@ -700,7 +754,7 @@ tr[data-timezone-unset="true"] td.timezone-unset-visual input[type="checkbox"] {
   height: 32px;
   object-fit: contain;
   image-rendering: pixelated; /* sharp pixel icons */
-  margin-right: 0px; /* Remove margin-right from icon itself */
+  margin-right: 8px;
   vertical-align: middle;
   flex-shrink: 0;
 }
@@ -796,60 +850,4 @@ tr[data-timezone-unset="true"] td.timezone-unset-visual input[type="checkbox"] {
     margin-bottom: 0; /* Override default button margin */
     padding: 6px 10px;
     font-size: 0.8em;
-}
-
-/* New: Time Slot Display Mode Selector */
-.time-slot-display-mode-selector {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 15px;
-    font-size: 0.9em;
-    color: #E0E0E0;
-}
-
-.time-slot-display-mode-selector label {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-}
-
-.time-slot-display-mode-selector input[type="radio"] {
-    appearance: none; /* Hide default radio button */
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    width: 18px;
-    height: 18px;
-    border: 2px solid #5A5A5A;
-    border-radius: 50%;
-    background-color: #2F2F2F;
-    outline: none;
-    cursor: pointer;
-    position: relative;
-    flex-shrink: 0;
-}
-
-.time-slot-display-mode-selector input[type="radio"]:checked {
-    background-color: #A0F0A0; /* Green when checked */
-    border-color: #6DC070;
-}
-
-.time-slot-display-mode-selector input[type="radio"]:checked::before {
-    content: '';
-    display: block;
-    width: 8px;
-    height: 8px;
-    background-color: #282828; /* Inner dot color */
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-}
-
-.time-slot-display-mode-selector span {
-    font-weight: bold;
-    white-space: nowrap;
 }

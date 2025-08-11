@@ -12,7 +12,6 @@ let globalPeopleForCalculation = [];
 let globalSelectedTimeSlotIndex = -1; // New: to keep track of the currently selected time slot button
 
 let currentDisplayMode = 'optimal'; // 'optimal' or 'hourly'
-let timeSlotDisplayMode = 'utc'; // New: 'utc' or 'local'
 let customUtcTimeInputEl; // Reference to the custom time input element
 let clearCustomTimeBtn; // Reference to the clear button
 
@@ -284,12 +283,23 @@ function populatePeopleFilter() {
     rows.forEach(tr => {
         const usernameInput = tr.cells[1].querySelector('input');
         const username = usernameInput ? usernameInput.value.trim() : '';
-        const iconImgElement = tr.cells[0].querySelector('img.icon-preview'); // Get the image element from the row
-        const iconSrc = iconImgElement && iconImgElement.style.display !== 'none' ? iconImgElement.src : ''; // Get its src
+        const iconImgEl = tr.cells[0].querySelector('img.icon-preview');
+        const iconSrc = iconImgEl && iconImgEl.style.display !== 'none' ? iconImgEl.src : '';
 
         if (username) {
             const label = document.createElement('label');
             label.className = 'filter-item-label';
+
+            // NEW: Add icon
+            if (iconSrc) {
+                const iconWrapper = document.createElement('div');
+                iconWrapper.className = 'icon-with-note-wrapper filter-icon-wrapper'; // Add a specific class for filter icons
+                const icon = document.createElement('img');
+                icon.src = iconSrc;
+                icon.className = 'summary-icon filter-icon'; // Add specific class for filter icons
+                iconWrapper.appendChild(icon);
+                label.appendChild(iconWrapper);
+            }
 
             const statusBtn = document.createElement('button');
             statusBtn.className = 'filter-status-btn';
@@ -298,19 +308,16 @@ function populatePeopleFilter() {
             const currentState = selectedPeopleFilter.get(username) || 'none';
             statusBtn.classList.add(currentState);
             statusBtn.textContent = currentState === 'online' ? '✓' : (currentState === 'offline' ? '✕' : '');
-
-            label.appendChild(statusBtn); // First, the status button (the "filter box")
-
-            // NEW: Add icon next to the status button (the "peoples icons")
-            if (iconSrc) {
-                const filterIcon = document.createElement('img');
-                filterIcon.src = iconSrc;
-                filterIcon.className = 'filter-person-icon'; // New class for filter icons
-                label.appendChild(filterIcon);
-            }
             
-            label.appendChild(document.createTextNode(username)); // Then username
-            checkboxContainer.appendChild(label);
+            // Apply grayscale to icon based on initial state
+            const iconElement = label.querySelector('.filter-icon');
+            if (iconElement) {
+                if (currentState === 'offline') {
+                    iconElement.classList.add('grayscale-icon');
+                } else {
+                    iconElement.classList.remove('grayscale-icon');
+                }
+            }
 
             statusBtn.addEventListener('click', () => {
                 let newState;
@@ -333,8 +340,21 @@ function populatePeopleFilter() {
                 statusBtn.classList.add(newState);
                 statusBtn.textContent = newState === 'online' ? '✓' : (newState === 'offline' ? '✕' : '');
 
+                // Update icon visuals
+                if (iconElement) {
+                    if (newState === 'offline') {
+                        iconElement.classList.add('grayscale-icon');
+                    } else {
+                        iconElement.classList.remove('grayscale-icon');
+                    }
+                }
+
                 updateAvailabilitySummary(); // Recalculate summary
             });
+
+            label.appendChild(statusBtn);
+            label.appendChild(document.createTextNode(username));
+            checkboxContainer.appendChild(label);
         }
     });
 
@@ -819,7 +839,7 @@ function generateHourlyTimeSlots(peopleData, selectedPeopleFilter, baseUtcStart)
 }
 
 // New: populate the slots as buttons
-function populateTimeSlotsButtons(displayMode, viewerOffset, viewerDst) {
+function populateTimeSlotsButtons() {
   const container = document.getElementById('availability-time-slots-container');
   container.innerHTML = ''; // Clear existing options
 
@@ -833,37 +853,14 @@ function populateTimeSlotsButtons(displayMode, viewerOffset, viewerDst) {
 
   globalAllTimeSlots.forEach((slot, i) => {
     const button = document.createElement('button');
-    let start, end;
-    const effectiveViewerOffset = viewerOffset + (viewerDst ? 1 : 0);
-
-    if (displayMode === 'utc') {
-        start = formatMinutesToHHMM(slot.startMinute);
-        end = formatMinutesToHHMM(slot.endMinute);
-    } else { // 'local'
-        const startDateTimeUtc = globalBaseUtcStartOfDay.plus({ minutes: slot.startMinute });
-        let endDateTimeUtc = globalBaseUtcStartOfDay.plus({ minutes: slot.endMinute });
-
-        // If the slot wraps midnight, the end date is the next day for local time conversion
-        if (slot.startMinute > slot.endMinute) {
-            endDateTimeUtc = endDateTimeUtc.plus({ days: 1 });
-        }
-        // Handle single minute case (start and end are same for single minute duration)
-        if (slot.rangeLengthMinutes === 1) {
-            endDateTimeUtc = startDateTimeUtc;
-        }
-
-        const startLocal = startDateTimeUtc.plus({ hours: effectiveViewerOffset });
-        const endLocal = endDateTimeUtc.plus({ hours: effectiveViewerOffset });
-        
-        start = startLocal.toFormat('HH:mm');
-        end = endLocal.toFormat('HH:mm');
-    }
+    const start = formatMinutesToHHMM(slot.startMinute);
+    const end = formatMinutesToHHMM(slot.endMinute);
 
     // Customize button text based on mode
     if (currentDisplayMode === 'optimal') {
-        button.textContent = `${slot.count} people: ${start} – ${end} ${displayMode.toUpperCase()}`;
+        button.textContent = `${slot.count} people: ${start} – ${end} UTC`;
     } else { // 'hourly'
-        button.textContent = `${slot.count} people: ${start} ${displayMode.toUpperCase()}`; // For hourly, just show start time
+        button.textContent = `${slot.count} people: ${start} UTC`; // For hourly, just show start time
     }
     
     button.dataset.slotIndex = i; // Store the index for retrieval
@@ -1097,8 +1094,8 @@ function displayViewerLocalWorstTime(maxOfflineCount, worstTimeRangeUtc, rangeLe
         
         // Sort: offline first, then by username
         combinedPeopleList.sort((a, b) => {
-            if (a.isAvailable === b.isAvailable) return a.isAvailable ? 1 : -1; // Offline first
-            return a.username.localeCompare(b.username); // Then by name
+            if (a.isAvailable === b.isAvailable) return a.username.localeCompare(b.username);
+            return a.isAvailable ? 1 : -1; // Offline first
         });
 
         combinedPeopleList.forEach(p => {
@@ -1395,12 +1392,6 @@ function updateAvailabilitySummary() {
 
   globalPeopleForCalculation = peopleForCalculation;
 
-  // Get viewer's timezone for local time slot display
-  const viewerOffsetSelect = document.getElementById('viewer-utc-offset');
-  const viewerDstCheckbox = document.getElementById('viewer-dst');
-  const viewerOffset = parseInt(viewerOffsetSelect.value);
-  const viewerDst = viewerDstCheckbox.checked;
-
   // --- Determine the central simulated UTC time for main lists and Best Time display ---
   let targetSimulatedUtcTime = null; // This will be the time used for the main summary lists and Best Time display
   let targetSimulatedCount = 0;
@@ -1427,7 +1418,7 @@ function updateAvailabilitySummary() {
             !(selectedPeopleFilter.get(p.username) === 'online' && !p.canEverBeAvailable)
         );
         for (const person of peopleConsideredForCustomTime) {
-            const personLocalTime = targetSimulatedUtcTime.plus({ hours, minutes }); // Use total minutes from start of day
+            const personLocalTime = targetSimulatedUtcTime.plus({ hours: person.effectiveOffsetHours });
             const localMinutes = personLocalTime.hour * 60 + personLocalTime.minute;
             const localDayOfWeek = personLocalTime.weekday;
             if (isPersonAvailableAtLocalTime(person, localMinutes, localDayOfWeek)) {
@@ -1444,7 +1435,7 @@ function updateAvailabilitySummary() {
         targetSimulatedEndMinute = targetSimulatedStartMinute;
         targetSimulatedRangeLength = 1;
     }
-    populateTimeSlotsButtons(timeSlotDisplayMode, viewerOffset, viewerDst); // Clears buttons
+    populateTimeSlotsButtons(); // Clears buttons
   } else {
     // No custom time, proceed with mode-based slot generation
     if (currentDisplayMode === 'optimal') {
@@ -1452,7 +1443,7 @@ function updateAvailabilitySummary() {
     } else { // 'hourly'
         globalAllTimeSlots = generateHourlyTimeSlots(peopleForCalculation, selectedPeopleFilter, baseUtcStartOfDay);
     }
-    populateTimeSlotsButtons(timeSlotDisplayMode, viewerOffset, viewerDst); // Populates buttons based on globalAllTimeSlots
+    populateTimeSlotsButtons(); // Populates buttons based on globalAllTimeSlots
 
     // Handle default selection for time slots if none is selected
     if (globalAllTimeSlots.length > 0 && 
@@ -2494,15 +2485,6 @@ clearCustomTimeBtn.addEventListener('click', () => {
         customUtcTimeInputEl.value = '';
     }
     updateAvailabilitySummary();
-});
-
-// NEW: Time Slot Display Mode Selector (UTC/Local)
-const timeDisplayModeRadios = document.querySelectorAll('input[name="time-display-mode"]');
-timeDisplayModeRadios.forEach(radio => {
-    radio.addEventListener('change', (event) => {
-        timeSlotDisplayMode = event.target.value;
-        updateAvailabilitySummary(); // Recalculate and re-render time slots
-    });
 });
 
 // Initial setup for the date picker (already exists, but make sure it's here)
