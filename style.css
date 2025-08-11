@@ -1,0 +1,855 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* Ensure padding and border are included in the element's total width/height */
+html {
+  box-sizing: border-box;
+}
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
+body {
+  font-family: 'Press Start 2P', cursive; /* Minecraft-inspired font */
+  margin: 0; /* Changed from 20px to 0 for full stretch */
+  background-color: #363636; /* Darker, earthy background */
+  color: #E0E0E0; /* Light text for contrast */
+  text-rendering: optimizeLegibility; /* Improve pixel font rendering */
+  -webkit-font-smoothing: antialiased; /* More consistent rendering */
+  font-size: 14px; /* Adjust base font size for pixel font legibility */
+}
+.container {
+  /* max-width: 800px; */ /* Removed to allow stretching */
+  width: 100%; /* Ensure it takes full width */
+  margin: auto; /* Keep auto margin for horizontal centering if max-width was present, or for general behavior */
+  background: #282828; /* Darker container */
+  padding: 2vw; /* Changed from 20px to 2vw for responsive padding */
+  box-shadow: 0 0 10px rgba(0,0,0,0.5); /* Stronger shadow */
+  border: 4px solid #5A5A5A; /* Blocky border */
+  border-radius: 8px; /* Slightly rounded corners for "block" feel */
+}
+h1, h2, h3, h4 {
+  text-align: center;
+  color: #A0F0A0; /* Greenish glow for titles */
+  text-shadow: 1px 1px 0 #000;
+  margin-bottom: 15px;
+}
+h1 {
+  font-size: 2.2em;
+}
+h2 {
+  font-size: 1.8em;
+}
+h3 {
+  font-size: 1.5em;
+}
+h4 {
+  font-size: 1.2em;
+}
+
+.clock {
+  font-size: 2.5em; /* Larger, more prominent clock */
+  text-align: center;
+  margin-bottom: 25px;
+  color: #FFF0A0; /* Amber color for clock */
+  text-shadow: 2px 2px 0 #000;
+  letter-spacing: 2px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  background-color: #363636; /* Table background */
+}
+th, td {
+  border: 2px solid #5A5A5A; /* Thicker, blocky borders for cells */
+  padding: 8px;
+  text-align: center;
+  color: #E0E0E0;
+}
+th {
+  background-color: #4A4A4A; /* Darker header background */
+  color: #A0F0A0;
+}
+button {
+  padding: 8px 16px; /* Larger buttons */
+  margin-bottom: 15px;
+  cursor: pointer;
+  background-color: #6B4226; /* Earthy button color */
+  color: #FFF;
+  border: 2px solid #3A2211; /* Darker button border */
+  border-radius: 4px; /* Slightly rounded */
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.9em;
+  transition: background-color 0.2s;
+}
+button:hover {
+  background-color: #8C5A33; /* Lighter on hover */
+}
+
+input[type="text"], input[type="time"], select, textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #2F2F2F; /* Dark input background */
+  border: 2px solid #5A5A5A; /* Input borders */
+  color: #E0E0E0;
+  padding: 6px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.8em; /* Slightly smaller for inputs */
+  border-radius: 4px;
+}
+input[type="checkbox"] {
+  width: auto; /* Checkbox default size */
+  margin: 0;
+  vertical-align: middle;
+}
+
+/* Icon preview styles */
+.icon-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+}
+.icon-preview {
+  width: 40px;
+  height: 40px;
+  object-fit: contain; /* Preserve aspect ratio without cropping */
+  margin-right: 8px;
+  vertical-align: middle;
+  image-rendering: pixelated; /* Ensure pixel art remains sharp */
+  border: 1px solid #777; /* Small border for preview */
+  background-color: #1a1a1a; /* Background for transparent areas */
+}
+.icon-cell input[type="file"] {
+  display: block; /* Make file input visible */
+  width: auto; /* Allow sizing by content */
+  font-size: 0.7em; /* Smaller text for file input */
+  margin-left: 5px;
+  white-space: nowrap; /* Prevent wrapping */
+  overflow: hidden; /* Hide overflow if text is too long */
+  text-overflow: ellipsis; /* Add ellipsis */
+}
+
+/* Styles for the new details/summary elements */
+details {
+  margin-bottom: 20px; /* Space between collapsible sections */
+  border: 4px solid #5A5A5A; /* Match container border */
+  border-radius: 8px; /* Match container border-radius */
+  background: #282828; /* Match container background */
+  padding: 2vw; /* Match container padding for consistency */
+}
+
+details:last-of-type { /* Use last-of-type to avoid matching nested details */
+  margin-bottom: 0; /* No margin after the last details block */
+}
+
+summary {
+  display: flex; /* Use flex to align text and custom marker */
+  align-items: center;
+  cursor: pointer;
+  list-style: none; /* Remove default arrow/triangle */
+  padding: 0; /* Reset default summary padding */
+  outline: none; /* Remove focus outline */
+  margin-left: -1vw; /* Counteract general padding of details for heading alignment */
+}
+
+summary::-webkit-details-marker {
+  display: none; /* For Webkit browsers, remove default marker */
+}
+
+summary h1,
+summary h2,
+summary h3 {
+  /* Inherit general heading styles, but adjust margins specific to summary */
+  margin-top: 0;
+  margin-bottom: 0;
+  display: inline; /* Allow the h-tag to size to its content within summary */
+}
+
+/* Style for the summary indicator (custom arrow) */
+summary::before {
+  content: '▶ '; /* Right-pointing triangle */
+  display: inline-block;
+  transform-origin: center;
+  transition: transform 0.2s ease-in-out;
+  margin-right: 10px;
+  color: #A0F0A0; /* Match heading color */
+  font-size: 0.8em; /* Slightly smaller than text */
+  vertical-align: middle;
+}
+
+details[open] summary::before {
+  content: '▼ '; /* Down-pointing triangle when open */
+  transform: rotate(0deg); /* Explicitly state rotation if needed, but content change is enough */
+}
+
+/* Styling for the original .availability-summary now applied to an inner div */
+.availability-summary-content {
+  margin-top: 30px; /* Original margin-top */
+  border-top: 2px solid #5A5A5A; /* Original border-top for the summary content */
+  padding-top: 20px; /* Original padding-top for the summary content */
+  background-color: #282828; /* Original background for the summary content */
+}
+
+.summary-counts {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  font-size: 1.4em;
+  font-weight: bold;
+  color: #FFF0A0;
+}
+.summary-lists {
+  display: flex;
+  justify-content: space-between; /* Changed from space-around to space-between for better stretch */
+  gap: 20px;
+  flex-wrap: wrap; /* Allows wrapping on smaller screens */
+}
+.available-list, .not-available-list {
+  flex: 1;
+  border: 3px solid #5A5A5A; /* Blocky borders */
+  padding: 10px;
+  border-radius: 6px;
+  background-color: #363636;
+}
+.available-list h4, .not-available-list h4 {
+  margin-top: 0;
+  text-align: center;
+}
+.available-list ul, .not-available-list ul {
+  list-style: none;
+  padding: 0;
+}
+.available-list li, .not-available-list li {
+  padding: 5px 0;
+  border-bottom: 1px dotted #5A5A5A; /* Dotted line */
+  text-align: left; /* Align list items left */
+  word-wrap: break-word; /* Prevent long names/times from overflowing */
+  display: flex; /* Use flexbox for icon and text alignment */
+  align-items: center; /* Vertically center icon and text */
+  gap: 8px; /* Add gap between icon wrapper and text */
+}
+.available-list li:last-child, .not-available-list li:last-child {
+  border-bottom: none;
+}
+.available-list li {
+  color: #A0F0A0; /* Green for available */
+}
+.not-available-list li {
+  color: #FF8080; /* Reddish for not available */
+}
+
+/* New style for unpredictable status in not-available list */
+.not-available-list li.unpredictable-status,
+.not-available-list li.mostly-free-status { /* Add class for mostly free */
+    color: #FFA500; /* Orange for unpredictable and mostly free when not available */
+}
+
+/* Styles for the new time inputs */
+/* Target the 6th column (Available Times) based on new layout */
+td:nth-child(6) { 
+  display: flex;
+  flex-direction: column; /* Stack select and time inputs vertically */
+  align-items: center;
+  justify-content: center;
+  padding: 8px; /* Ensure padding for the cell itself */
+}
+
+/* Style for the container generated by createAvailabilitySectionElements */
+.availability-section-container {
+    width: 100%; /* Ensure it takes full width of its parent */
+    display: flex; /* Flex children (select + time inputs container) */
+    flex-direction: column; /* Stack them */
+    align-items: center; /* Center horizontally */
+}
+
+/* Ensure select and time inputs take full width within their section container */
+.availability-section-container .availability-type-select,
+.availability-section-container .time-inputs-container {
+    width: 100%;
+}
+
+.availability-type-select {
+  /* This rule applies to all selects created by createAvailabilitySectionElements */
+  margin-bottom: 5px; /* Space between select and time inputs */
+  box-sizing: border-box;
+  background-color: #2F2F2F;
+  border: 2px solid #5A5A5A;
+  color: #E0E0E0;
+  padding: 6px;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 0.8em;
+  border-radius: 4px;
+}
+
+.time-inputs-container {
+  display: flex; /* This will be flex for horizontal time inputs */
+  width: 100%; /* Take full width for containing inputs */
+  justify-content: center;
+  align-items: center;
+  white-space: nowrap; /* Prevent time inputs from wrapping within their container */
+}
+
+.time-input {
+  width: 45%; /* Approx half width, accounting for separator and padding */
+  box-sizing: border-box;
+  padding: 8px; /* Consistent padding */
+  margin: 0 2px; /* Small margin between inputs and separator */
+}
+
+/* Styles for the new weekend/weekday input group */
+.weekend-weekday-inputs-group {
+    position: relative; /* For positioning the close button */
+    display: flex; /* Will be block by default, flex when shown */
+    flex-direction: column; /* Stack weekday and weekend inputs */
+    gap: 8px; /* Space between the two sets */
+    margin-top: 5px;
+    width: 100%; /* Take full width of parent TD */
+    padding-top: 20px; /* Make space for the X button */
+}
+
+/* NEW: Styles for the new custom day input group */
+.custom-days-inputs-group {
+    display: flex; /* Will be block by default, flex when shown */
+    flex-direction: column; /* Stack daily inputs */
+    gap: 8px; /* Space between daily sets */
+    margin-top: 5px;
+    width: 100%; /* Take full width of parent TD */
+}
+
+/* This targets the labels for "Weekdays", "Weekends", and individual days like "Monday" */
+.weekend-weekday-inputs-group .day-type-label,
+.custom-days-inputs-group .day-type-label { /* Add custom-days-inputs-group */
+    font-size: 0.7em; /* Smaller label for 'Weekdays/Weekends' / Individual Days */
+    color: #A0F0A0; /* Match title color */
+    text-align: left; /* Align labels left within their group */
+    width: 100%;
+    margin-top: 5px;
+    margin-bottom: -3px; /* Reduce space after label */
+    display: block; /* Make span a block for margin to apply */
+}
+
+/* Specific styling for nested availability sections within weekend/weekday group */
+.weekend-weekday-inputs-group .availability-section-container,
+.custom-days-inputs-group .availability-section-container { /* Add custom-days-inputs-group */
+    padding: 5px; /* Add some padding around the nested sections */
+    border: 1px dashed #5A5A5A; /* Dashed border to visually separate */
+    border-radius: 4px;
+    background-color: #2f2f2f; /* Slightly lighter background for nested sections */
+}
+
+/* NEW: Styles for Discord Embed section */
+.embed-container {
+  max-width: unset; /* Allow it to take full available width */
+  width: 100%; /* Explicitly set to 100% */
+  height: 520px; /* Fixed height for the container */
+  display: flex; /* Use flexbox for side-by-side spots */
+  gap: 15px; /* Space between the two embed spots */
+  align-items: stretch; /* Make spots stretch to fill container height */
+  justify-content: center; /* Center horizontally if space allows */
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  padding: 0; /* Remove padding from here, individual spots will have their own content padding */
+  overflow: hidden; /* Prevent container overflow from children */
+  box-sizing: border-box; /* Include padding/border in width */
+  border: 2px dashed #5A5A5A; /* Keep border on outer container */
+  background-color: #1f1f1f; /* Keep background on outer container */
+}
+
+/* Make the left embed approximately half the width of the right embed when space is available */
+#embed-spot-left {
+  flex-grow: 1; /* Takes 1 unit of available flexible space */
+}
+
+#embed-spot-right {
+  flex-grow: 2; /* Takes 2 units of available flexible space (twice the left) */
+}
+
+.embed-spot {
+  flex: 1; /* Keep this as base, individual IDs will override flex-grow */
+  min-width: 300px; /* Ensure they don't get too small */
+  height: 100%; /* Fill the height of the container */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column; /* Stack placeholder/content vertically */
+  color: #E0E0E0;
+  padding: 15px;
+  text-align: center;
+  position: relative; /* For positioning the delete button */
+  overflow: auto; /* Allow scrolling within the spot if embed content is too large */
+}
+
+.embed-spot .placeholder-message {
+  font-size: 0.9em;
+  color: #888;
+  user-select: none;
+  pointer-events: none; /* Allows right-click on the parent element, not just the text */
+}
+
+/* Style for the delete button */
+.delete-embed-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #FF5555;
+    color: white;
+    border: 2px solid #AA0000;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10;
+    padding: 0;
+    transition: background-color 0.2s;
+}
+
+.delete-embed-btn:hover {
+    background-color: #FF0000;
+}
+
+/* Ensure embedded iframes or content stretch within the spot */
+.embed-spot iframe,
+.embed-spot object,
+.embed-spot embed {
+    width: 100%;
+    height: 100%; /* Take up available height from the constrained container */
+    border: none;
+}
+
+/* Style for the modal overlay and content */
+.modal-overlay {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); /* Dark semi-transparent background */
+    z-index: 1000; /* On top of everything */
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: #282828; /* Darker background, similar to container */
+    border: 4px solid #5A5A5A;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    position: relative; /* For potential close button */
+}
+
+.modal-content h4 {
+    color: #A0F0A0; /* Greenish glow */
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.modal-content p {
+    font-size: 0.9em;
+    margin-bottom: 15px;
+    color: #E0E0E0;
+}
+
+.modal-content textarea {
+    width: calc(100% - 12px); /* Account for padding */
+    min-height: 100px;
+    margin-bottom: 20px;
+    font-size: 0.9em;
+    resize: vertical;
+    background-color: #2F2F2F;
+    border: 2px solid #5A5A5A;
+    color: #E0E0E0;
+    padding: 6px;
+    font-family: monospace; /* For code input */
+    border-radius: 4px;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+.modal-buttons button {
+    flex-grow: 1;
+    margin-bottom: 0; /* Remove default button margin */
+}
+
+/* NEW: Styles for Note Viewer Modal (reusing modal-overlay, modal-content) */
+.note-viewer-text {
+    text-align: left; /* Align note text left for readability */
+    white-space: pre-wrap; /* Preserve whitespace and allow wrapping */
+    word-break: break-word; /* Ensure long words break */
+    max-height: 70vh; /* Limit height to prevent modal from going off-screen */
+    overflow-y: auto; /* Add scrollbar if content overflows */
+    padding: 5px;
+    border: 1px dashed #5A5A5A; /* Border to contain the buttons */
+    border-radius: 4px;
+    background-color: #363636;
+}
+
+/* NEW: Styles for Timezone Actions column */
+.timezone-actions-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.timezone-actions-cell button {
+  padding: 4px 8px;
+  font-size: 0.7em;
+  margin: 2px;
+  width: auto;
+  min-width: unset;
+}
+
+.unset-timezone-btn {
+  background-color: #c08000; /* Amber-ish for unset */
+  border-color: #805500;
+}
+.unset-timezone-btn:hover {
+  background-color: #ffaa00;
+}
+
+.set-timezone-btn {
+  background-color: #4CAF50; /* Green for set */
+  border-color: #2F7C32;
+}
+.set-timezone-btn:hover {
+  background-color: #6DC070;
+}
+
+/* Visual indication for unset timezone */
+tr[data-timezone-unset="true"] td {
+    background-color: #3a2a2a; /* Slightly reddish background */
+}
+
+tr[data-timezone-unset="true"] td.timezone-unset-visual input,
+tr[data-timezone-unset="true"] td.timezone-unset-visual select {
+    background-color: #4a3a3a; /* Darker red tint for disabled inputs */
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+tr[data-timezone-unset="true"] td.timezone-unset-visual input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+/* NEW: Styles for enhanced people filter buttons */
+.people-filter-controls .filter-item-label {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0; /* Remove existing margin-bottom as gap handles spacing */
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none; /* Prevent text selection on click */
+    padding: 4px 8px; /* Add some padding around each item */
+    border: 1px solid #4A4A4A; /* Border for each filter item */
+    border-radius: 4px;
+    background-color: #2f2f2f;
+    flex-shrink: 0; /* Prevent items from stretching excessively */
+    gap: 5px; /* Add a small gap between internal elements */
+}
+
+.people-filter-controls .filter-status-btn {
+    width: 20px; /* Smaller button */
+    height: 20px;
+    min-width: unset; /* Override button min-width */
+    padding: 0;
+    margin: 0; /* Remove default button margin, let flex gap handle it */
+    background-color: #4A4A4A; /* Neutral gray */
+    color: #E0E0E0;
+    border: 2px solid #5A5A5A;
+    border-radius: 3px;
+    display: flex; /* For centering content */
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1em; /* Make icons/chars visible */
+    font-weight: bold;
+    flex-shrink: 0;
+    transition: background-color 0.1s, border-color 0.1s, color 0.1s;
+}
+
+/* New style for icons in the filter */
+.people-filter-controls .filter-person-icon {
+    width: 24px; /* Smaller size for filter icons */
+    height: 24px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    margin: 0; /* Remove explicit margin, let flex gap handle it */
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* State for 'online' */
+.people-filter-controls .filter-status-btn.online {
+    background-color: #4CAF50; /* Green */
+    border-color: #2F7C32;
+    color: white;
+}
+
+/* State for 'offline' */
+.people-filter-controls .filter-status-btn.offline {
+    background-color: #FF5555; /* Red */
+    border-color: #AA0000;
+    color: white;
+}
+
+/* Default state (no explicit filter) */
+.people-filter-controls .filter-status-btn.none {
+    background-color: #4A4A4A;
+    border-color: #5A5A5A;
+    color: #E0E0E0;
+}
+
+.people-filter-controls .filter-status-btn:hover {
+    filter: brightness(1.2); /* Slight highlight on hover */
+}
+
+/* Style best/worst time lists to match availability summary */
+.people-list-dropdown ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.people-list-dropdown ul li {
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px dotted #5A5A5A;
+  gap: 8px; /* Consistent gap for summary lists */
+}
+.people-list-dropdown ul li:last-child {
+  border-bottom: none;
+}
+.people-list-dropdown ul li.available-item {
+  color: #A0F0A0;
+}
+.people-list-dropdown ul li.offline-item {
+  color: #FF8080;
+}
+
+/* Settings icon and panel */
+.settings-icon {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: #E0E0E0;
+  font-size: 1.5em;
+  cursor: pointer;
+  z-index: 2000;
+}
+.settings-panel {
+  display: none;
+  position: fixed;
+  top: 40px;
+  right: 10px;
+  background-color: #282828;
+  border: 2px solid #5A5A5A;
+  border-radius: 8px;
+  padding: 10px;
+  z-index: 2000;
+  color: #E0E0E0;
+}
+.settings-panel h4 {
+  margin: 0 0 10px 0;
+  color: #A0F0A0;
+  font-size: 1.2em;
+}
+.settings-panel label {
+  font-size: 0.9em;
+}
+
+/* Spacing for Experimental Features section */
+#experimental-features {
+  margin-top: 20px;
+}
+
+/* Red color for the "Worst Time for Collaboration" header in Experimental Features */
+#experimental-features .worst-time-section h4 {
+  color: #FF5555;
+}
+
+/* Fix summary icons size and layout */
+.icon-with-note-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; /* Set fixed width to contain the icon */
+  height: 32px; /* Set fixed height to contain the icon */
+  flex-shrink: 0; /* Prevents this wrapper from shrinking */
+}
+
+.summary-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  image-rendering: pixelated; /* sharp pixel icons */
+  margin-right: 0px; /* Remove margin-right from icon itself */
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.grayscale-icon {
+  filter: grayscale(100%);
+  opacity: 0.6;
+}
+
+/* New: Styles for time slots as buttons */
+.time-slots-buttons-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px; /* Space between buttons */
+    margin-top: 10px;
+    justify-content: center;
+    max-height: 200px; /* Limit height to prevent excessive scrolling */
+    overflow-y: auto; /* Add scrollbar if content overflows */
+    padding: 5px;
+    border: 1px dashed #5A5A5A; /* Border to contain the buttons */
+    border-radius: 4px;
+    background-color: #363636;
+}
+
+.time-slots-buttons-container button {
+    flex-grow: 1; /* Allow buttons to grow and fill space */
+    min-width: 120px; /* Minimum width for buttons */
+    max-width: calc(50% - 4px); /* Max two buttons per row on wider screens */
+    padding: 8px 12px;
+    font-size: 0.8em;
+    margin: 0; /* Remove default button margin, controlled by gap */
+    background-color: #4A4A4A; /* Darker background */
+    border: 2px solid #5A5A5A;
+    color: #E0E0E0;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.time-slots-buttons-container button:hover {
+    background-color: #5A5A5A;
+    color: #FFF;
+}
+
+.time-slots-buttons-container button.selected {
+    background-color: #A0F0A0; /* Green highlight for selected */
+    border-color: #6DC070;
+    color: #282828; /* Dark text on light background */
+    font-weight: bold;
+}
+
+/* Time Slot Mode Selector */
+.time-slot-mode-selector {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+    gap: 10px;
+}
+
+.time-slot-mode-selector button {
+    flex-grow: 1;
+    max-width: 200px;
+    background-color: #4A4A4A;
+    border: 2px solid #5A5A5A;
+    color: #E0E0E0;
+}
+
+.time-slot-mode-selector button.selected {
+    background-color: #A0F0A0;
+    border-color: #6DC070;
+    color: #282828;
+    font-weight: bold;
+}
+
+/* Custom Time Input */
+.custom-time-input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    justify-content: center;
+}
+
+.custom-time-input-container label {
+    white-space: nowrap;
+    font-size: 0.9em;
+}
+
+.custom-time-input-container input[type="time"] {
+    width: 120px; /* Adjust width as needed */
+    flex-shrink: 0;
+}
+
+.custom-time-input-container button {
+    margin-bottom: 0; /* Override default button margin */
+    padding: 6px 10px;
+    font-size: 0.8em;
+}
+
+/* New: Time Slot Display Mode Selector */
+.time-slot-display-mode-selector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    color: #E0E0E0;
+}
+
+.time-slot-display-mode-selector label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+
+.time-slot-display-mode-selector input[type="radio"] {
+    appearance: none; /* Hide default radio button */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #5A5A5A;
+    border-radius: 50%;
+    background-color: #2F2F2F;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.time-slot-display-mode-selector input[type="radio"]:checked {
+    background-color: #A0F0A0; /* Green when checked */
+    border-color: #6DC070;
+}
+
+.time-slot-display-mode-selector input[type="radio"]:checked::before {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    background-color: #282828; /* Inner dot color */
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.time-slot-display-mode-selector span {
+    font-weight: bold;
+    white-space: nowrap;
+}
