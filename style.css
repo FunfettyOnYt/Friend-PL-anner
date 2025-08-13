@@ -338,7 +338,7 @@ td:nth-child(6) {
     background-color: #2f2f2f; /* Slightly lighter background for nested sections */
 }
 
-/* NEW: Styles for the info button and tooltip in availability summary lists */
+/* NEW: Styles for info button and tooltip in availability summary lists */
 .note-info-container {
     position: absolute; /* Position relative to .icon-with-note-wrapper */
     bottom: 0; /* Align button to bottom of icon wrapper */
@@ -850,4 +850,22 @@ tr[data-timezone-unset="true"] td.timezone-unset-visual input[type="checkbox"] {
     margin-bottom: 0; /* Override default button margin */
     padding: 6px 10px;
     font-size: 0.8em;
+}
+
+/* New style for time display toggle button */
+.time-display-toggle-btn {
+  background-color: #2F2F2F; /* Darker, neutral background */
+  border: 2px solid #5A5A5A; /* Match input borders */
+  color: #E0E0E0;
+  padding: 6px 10px;
+  font-size: 0.8em;
+  margin-top: 10px; /* Space from other controls */
+  display: block; /* Take full width and center */
+  width: 100%;
+  max-width: 250px; /* Limit width */
+  margin-left: auto;
+  margin-right: auto;
+}
+.time-display-toggle-btn:hover {
+  background-color: #4A4A4A;
 }
