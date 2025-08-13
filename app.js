@@ -12,8 +12,9 @@ let globalPeopleForCalculation = [];
 let globalSelectedTimeSlotIndex = -1; // New: to keep track of the currently selected time slot button
 
 let currentDisplayMode = 'optimal'; // 'optimal' or 'hourly'
-let customUtcTimeInputEl; // Reference to the custom time input element
-let clearCustomTimeBtn; // Reference to the clear button
+
+// New global: Determines whether the "Best Time for Collaboration" output shows UTC or local time
+let displayTimeInUtc = true; // true for UTC, false for viewer's local time
 
 // Function to parse HH:MM string to minutes from midnight
 function timeToMinutes(timeStr) {
@@ -848,21 +849,56 @@ function populateTimeSlotsButtons() {
       return;
   }
 
+  // Get viewer's timezone settings for local time conversion
+  const viewerOffsetSelect = document.getElementById('viewer-utc-offset');
+  const viewerDstCheckbox = document.getElementById('viewer-dst');
+  const viewerOffset = parseInt(viewerOffsetSelect.value);
+  const viewerDst = viewerDstCheckbox.checked;
+  const effectiveViewerOffset = viewerOffset + (viewerDst ? 1 : 0);
+
   // Clear previous selected state from all buttons
   Array.from(container.children).forEach(btn => btn.classList.remove('selected'));
 
   globalAllTimeSlots.forEach((slot, i) => {
     const button = document.createElement('button');
-    const start = formatMinutesToHHMM(slot.startMinute);
-    const end = formatMinutesToHHMM(slot.endMinute);
+    let buttonText = '';
 
-    // Customize button text based on mode
-    if (currentDisplayMode === 'optimal') {
-        button.textContent = `${slot.count} people: ${start} – ${end} UTC`;
-    } else { // 'hourly'
-        button.textContent = `${slot.count} people: ${start} UTC`; // For hourly, just show start time
+    if (displayTimeInUtc) {
+        const startUtc = formatMinutesToHHMM(slot.startMinute);
+        const endUtc = formatMinutesToHHMM(slot.endMinute);
+
+        if (currentDisplayMode === 'optimal') {
+            // For optimal, if length is 1, we show just start. Otherwise start-end.
+            buttonText = `${slot.count} people: ${startUtc} ${slot.rangeLengthMinutes > 1 ? `– ${endUtc}` : ''} UTC`;
+        } else { // 'hourly'
+            // For hourly, we always show just start for the label, as it represents the hour block.
+            buttonText = `${slot.count} people: ${startUtc} UTC`;
+        }
+    } else { // Show Local Time
+        const utcStartDateTime = globalBaseUtcStartOfDay.plus({ minutes: slot.startMinute });
+        let utcEndDateTime = globalBaseUtcStartOfDay.plus({ minutes: slot.endMinute });
+
+        // Correctly handle midnight crossing for the end time when converting to local
+        if (slot.startMinute > slot.endMinute && slot.rangeLengthMinutes > 0) {
+            utcEndDateTime = utcEndDateTime.plus({ days: 1 });
+        }
+        
+        const localStartDateTime = utcStartDateTime.plus({ hours: effectiveViewerOffset });
+        const localEndDateTime = utcEndDateTime.plus({ hours: effectiveViewerOffset });
+
+        const localStartFormatted = localStartDateTime.toFormat('h:mm a');
+        const localEndFormatted = localEndDateTime.toFormat('h:mm a');
+
+        if (currentDisplayMode === 'optimal') {
+            // If the optimal range is a single minute, only show the start time.
+            buttonText = `${slot.count} people: ${localStartFormatted} ${slot.rangeLengthMinutes > 1 ? `– ${localEndFormatted}` : ''} Local`;
+        } else { // 'hourly'
+            // For hourly, always show just the start of the hour in local time.
+            buttonText = `${slot.count} people: ${localStartFormatted} Local`;
+        }
     }
     
+    button.textContent = buttonText;
     button.dataset.slotIndex = i; // Store the index for retrieval
 
     if (i === globalSelectedTimeSlotIndex) {
@@ -886,11 +922,6 @@ function handleTimeSlotButtonClick(event) {
       globalSelectedTimeSlotIndex = -1; // Unselect
   } else {
       globalSelectedTimeSlotIndex = newIndex;
-  }
-
-  // Clear custom time input when a slot button is clicked
-  if (customUtcTimeInputEl) {
-      customUtcTimeInputEl.value = '';
   }
 
   updateAvailabilitySummary(); // Recalculate and re-render everything based on the new selection
@@ -936,11 +967,25 @@ function updateBestTimeDisplay(displayedAvailableCount, displayedTimeRangeUtc, d
             const sUtc = formatMinutesToHHMM(fbRange.startMinute);
             const eUtc = formatMinutesToHHMM(fbRange.endMinute);
             const dur = formatMinutesDuration(fbLen);
+            
+            // NEW: Use displayTimeInUtc for the main output
+            let mainTimeStr = '';
+            if (displayTimeInUtc) {
+                mainTimeStr = `<span style="color:#FFF0A0;">${sUtc} ${fbLen > 1 ? `– ${eUtc}` : ''} UTC</span>`;
+            } else {
+                let dtStart = baseUtcStart.startOf('day').plus({ minutes: fbRange.startMinute });
+                let dtEnd = baseUtcStart.startOf('day').plus({ minutes: fbRange.endMinute });
+                if (fbRange.startMinute > fbRange.endMinute) dtEnd = dtEnd.plus({ days: 1 });
+                const locStart = dtStart.plus({ hours: vOff });
+                const locEnd = dtEnd.plus({ hours: vOff });
+                mainTimeStr = `<span style="color:#FFF0A0;">${locStart.toFormat('h:mm a')} ${fbLen > 1 ? `– ${locEnd.toFormat('h:mm a')}` : ''} Local</span>`;
+            }
+
             outputElement.innerHTML = 
               `Best overlap for selected: <span style="color:#A0F0A0;">${fbCount}/${subgroup.length}</span>` +
-              ` at <span style="color:#FFF0A0;">${sUtc} - ${eUtc} UTC</span> (${dur})`;
+              ` at ${mainTimeStr} (${dur})`;
 
-            // viewer-local times
+            // viewer-local times (always show these below the main output)
             let dtStart = baseUtcStart.startOf('day').plus({ minutes: fbRange.startMinute });
             let dtEnd   = baseUtcStart.startOf('day').plus({ minutes: fbRange.endMinute });
             if (fbRange.startMinute > fbRange.endMinute) dtEnd = dtEnd.plus({ days: 1 });
@@ -988,7 +1033,16 @@ function updateBestTimeDisplay(displayedAvailableCount, displayedTimeRangeUtc, d
 
         let mainMessage = `Available: <span style="color:#A0F0A0;">${displayedAvailableCount} out of ${totalPeopleConsideredForCount}</span>`;
 
-        outputElement.innerHTML = `${mainMessage} at <span style="color:#FFF0A0;">${displayedTimeUtcStartStr} ${displayedRangeLengthMinutes > 1 ? `– ${displayedTimeUtcEndStr}` : ''} UTC</span> (${formattedLength})`;
+        // NEW: Apply displayTimeInUtc logic for the main output
+        let timeOutputPart = '';
+        if (displayTimeInUtc) {
+            timeOutputPart = `<span style="color:#FFF0A0;">${displayedTimeUtcStartStr} ${displayedRangeLengthMinutes > 1 ? `– ${displayedTimeUtcEndStr}` : ''} UTC</span>`;
+        } else {
+            timeOutputPart = `<span style="color:#FFF0A0;">${local12HourStart} ${displayedRangeLengthMinutes > 1 ? `– ${local12HourEnd}` : ''} Local</span>`;
+        }
+        outputElement.innerHTML = `${mainMessage} at ${timeOutputPart} (${formattedLength})`;
+
+        // These always show local 24h/12h from the viewer's perspective
         local24hOutput.textContent = `Local (24h): ${local24HourStart} ${displayedRangeLengthMinutes > 1 ? `– ${local24HourEnd}` : ''}`;
         local12hOutput.textContent = `Local (12h): ${local12HourStart} ${displayedRangeLengthMinutes > 1 ? `– ${local12HourEnd}` : ''}`;
 
@@ -1094,8 +1148,8 @@ function displayViewerLocalWorstTime(maxOfflineCount, worstTimeRangeUtc, rangeLe
         
         // Sort: offline first, then by username
         combinedPeopleList.sort((a, b) => {
-            if (a.isAvailable === b.isAvailable) return a.username.localeCompare(b.username);
-            return a.isAvailable ? 1 : -1; // Offline first
+            if (a.isAvailable === b.isAvailable) return a.isAvailable ? 1 : -1; // Offline first
+            return a.username.localeCompare(b.username);
         });
 
         combinedPeopleList.forEach(p => {
@@ -1399,88 +1453,49 @@ function updateAvailabilitySummary() {
   let targetSimulatedStartMinute = -1;
   let targetSimulatedEndMinute = -1;
 
-  if (customUtcTimeInputEl && customUtcTimeInputEl.value) {
-    // If custom time is set, override all slot selections
-    globalSelectedTimeSlotIndex = -1; // Unselect any button
-    globalAllTimeSlots = []; // Clear current buttons
-    
-    // Parse custom time (HH:MM) and combine with baseUtcStartOfDay
-    const [hours, minutes] = customUtcTimeInputEl.value.split(':').map(Number);
-    if (!isNaN(hours) && !isNaN(minutes)) {
-        targetSimulatedStartMinute = hours * 60 + minutes;
-        targetSimulatedEndMinute = targetSimulatedStartMinute; // A single minute for exact time
-        targetSimulatedRangeLength = 1;
-        targetSimulatedUtcTime = baseUtcStartOfDay.plus({ hours, minutes });
+  // Custom time input no longer exists, so logic now always flows to mode-based slot generation.
+  if (currentDisplayMode === 'optimal') {
+      globalAllTimeSlots = getOrderedAvailabilityRanges(peopleForCalculation, selectedPeopleFilter, baseUtcStartOfDay);
+  } else { // 'hourly'
+      globalAllTimeSlots = generateHourlyTimeSlots(peopleForCalculation, selectedPeopleFilter, baseUtcStartOfDay);
+  }
+  populateTimeSlotsButtons(); // Populates buttons based on globalAllTimeSlots
 
-        // Calculate how many people are available at this custom minute
-        let countAtCustomTime = 0;
-        const peopleConsideredForCustomTime = peopleForCalculation.filter(p => 
-            !(selectedPeopleFilter.get(p.username) === 'online' && !p.canEverBeAvailable)
-        );
-        for (const person of peopleConsideredForCustomTime) {
-            const personLocalTime = targetSimulatedUtcTime.plus({ hours: person.effectiveOffsetHours });
-            const localMinutes = personLocalTime.hour * 60 + personLocalTime.minute;
-            const localDayOfWeek = personLocalTime.weekday;
-            if (isPersonAvailableAtLocalTime(person, localMinutes, localDayOfWeek)) {
-                countAtCustomTime++;
-            }
-        }
-        targetSimulatedCount = countAtCustomTime;
+  // Handle default selection for time slots if none is selected
+  if (globalAllTimeSlots.length > 0 && 
+      (globalSelectedTimeSlotIndex === -1 || globalSelectedTimeSlotIndex >= globalAllTimeSlots.length)) {
+      globalSelectedTimeSlotIndex = 0; // Default to the first slot if available
+  } else if (globalAllTimeSlots.length === 0) {
+      globalSelectedTimeSlotIndex = -1;
+  }
 
-    } else {
-        // Fallback if custom time is invalid
-        targetSimulatedUtcTime = nowUtc; 
-        targetSimulatedCount = 0; // Or current count
-        targetSimulatedStartMinute = targetSimulatedUtcTime.hour * 60 + targetSimulatedUtcTime.minute;
-        targetSimulatedEndMinute = targetSimulatedStartMinute;
-        targetSimulatedRangeLength = 1;
-    }
-    populateTimeSlotsButtons(); // Clears buttons
+  // Determine targetSimulatedUtcTime from the selected slot button
+  if (globalSelectedTimeSlotIndex !== -1 && globalAllTimeSlots[globalSelectedTimeSlotIndex]) {
+      const selectedSlot = globalAllTimeSlots[globalSelectedTimeSlotIndex];
+      targetSimulatedUtcTime = baseUtcStartOfDay.startOf('day').plus({ minutes: selectedSlot.startMinute });
+      targetSimulatedCount = selectedSlot.count;
+      targetSimulatedStartMinute = selectedSlot.startMinute;
+      targetSimulatedEndMinute = selectedSlot.endMinute;
+      targetSimulatedRangeLength = selectedSlot.rangeLengthMinutes;
   } else {
-    // No custom time, proceed with mode-based slot generation
-    if (currentDisplayMode === 'optimal') {
-        globalAllTimeSlots = getOrderedAvailabilityRanges(peopleForCalculation, selectedPeopleFilter, baseUtcStartOfDay);
-    } else { // 'hourly'
-        globalAllTimeSlots = generateHourlyTimeSlots(peopleForCalculation, selectedPeopleFilter, baseUtcStartOfDay);
-    }
-    populateTimeSlotsButtons(); // Populates buttons based on globalAllTimeSlots
-
-    // Handle default selection for time slots if none is selected
-    if (globalAllTimeSlots.length > 0 && 
-        (globalSelectedTimeSlotIndex === -1 || globalSelectedTimeSlotIndex >= globalAllTimeSlots.length)) {
-        globalSelectedTimeSlotIndex = 0; // Default to the first slot if available
-    } else if (globalAllTimeSlots.length === 0) {
-        globalSelectedTimeSlotIndex = -1;
-    }
-
-    // Determine targetSimulatedUtcTime from the selected slot button
-    if (globalSelectedTimeSlotIndex !== -1 && globalAllTimeSlots[globalSelectedTimeSlotIndex]) {
-        const selectedSlot = globalAllTimeSlots[globalSelectedTimeSlotIndex];
-        targetSimulatedUtcTime = baseUtcStartOfDay.startOf('day').plus({ minutes: selectedSlot.startMinute });
-        targetSimulatedCount = selectedSlot.count;
-        targetSimulatedStartMinute = selectedSlot.startMinute;
-        targetSimulatedEndMinute = selectedSlot.endMinute;
-        targetSimulatedRangeLength = selectedSlot.rangeLengthMinutes;
-    } else {
-        targetSimulatedUtcTime = nowUtc; // Fallback to current UTC if no slot selected or available
-        // For fallback, we need to calculate count if it's not from a slot
-        let fallbackCount = 0;
-        const peopleConsideredForFallback = peopleForCalculation.filter(p => 
-            !(selectedPeopleFilter.get(p.username) === 'online' && !p.canEverBeAvailable)
-        );
-        for (const person of peopleConsideredForFallback) {
-             const personLocalTime = targetSimulatedUtcTime.plus({ hours: person.effectiveOffsetHours });
-            const localMinutes = personLocalTime.hour * 60 + personLocalTime.minute;
-            const localDayOfWeek = personLocalTime.weekday;
-            if (isPersonAvailableAtLocalTime(person, localMinutes, localDayOfWeek)) {
-                fallbackCount++;
-            }
-        }
-        targetSimulatedCount = fallbackCount;
-        targetSimulatedStartMinute = targetSimulatedUtcTime.hour * 60 + targetSimulatedUtcTime.minute;
-        targetSimulatedEndMinute = targetSimulatedStartMinute; // Single minute
-        targetSimulatedRangeLength = 1;
-    }
+      targetSimulatedUtcTime = nowUtc; // Fallback to current UTC if no slot selected or available
+      // For fallback, we need to calculate count if it's not from a slot
+      let fallbackCount = 0;
+      const peopleConsideredForFallback = peopleForCalculation.filter(p => 
+          !(selectedPeopleFilter.get(p.username) === 'online' && !p.canEverBeAvailable)
+      );
+      for (const person of peopleConsideredForFallback) {
+           const personLocalTime = targetSimulatedUtcTime.plus({ hours: person.effectiveOffsetHours });
+          const localMinutes = personLocalTime.hour * 60 + personLocalTime.minute;
+          const localDayOfWeek = personLocalTime.weekday;
+          if (isPersonAvailableAtLocalTime(person, localMinutes, localDayOfWeek)) {
+              fallbackCount++;
+          }
+      }
+      targetSimulatedCount = fallbackCount;
+      targetSimulatedStartMinute = targetSimulatedUtcTime.hour * 60 + targetSimulatedUtcTime.minute;
+      targetSimulatedEndMinute = targetSimulatedStartMinute; // Single minute
+      targetSimulatedRangeLength = 1;
   }
 
   // Populate peopleToRenderInMainLists based on `targetSimulatedUtcTime`
@@ -2373,6 +2388,7 @@ document.getElementById('load-file-input').addEventListener('change', loadFromFi
 // Event listeners for viewer's timezone selection
 const viewerOffsetSelect = document.getElementById('viewer-utc-offset');
 const viewerDstCheckbox = document.getElementById('viewer-dst');
+const toggleBestTimeDisplayModeBtn = document.getElementById('toggle-best-time-display-mode'); // New button
 
 // Populate options for viewer's UTC offset
 for (let offset = -12; offset <= 14; offset++) {
@@ -2411,6 +2427,13 @@ viewerDstCheckbox.checked = initialViewerDst;
 
 viewerOffsetSelect.addEventListener('change', updateAvailabilitySummary);
 viewerDstCheckbox.addEventListener('change', updateAvailabilitySummary);
+
+// NEW: Event listener for the time display mode button
+toggleBestTimeDisplayModeBtn.addEventListener('click', () => {
+    displayTimeInUtc = !displayTimeInUtc; // Toggle the state
+    toggleBestTimeDisplayModeBtn.textContent = displayTimeInUtc ? 'Show Local Time' : 'Show UTC Time';
+    updateAvailabilitySummary(); // Re-render the best time section
+});
 
 // Settings panel logic
 const settingsIcon = document.getElementById('settings-icon');
@@ -2454,14 +2477,11 @@ availabilityTbody.addEventListener('dragend', handleDragEnd);
 // Get references to new elements
 const modeOptimalTimesBtn = document.getElementById('mode-optimal-times');
 const modeHourlySlotsBtn = document.getElementById('mode-hourly-slots');
-customUtcTimeInputEl = document.getElementById('custom-utc-time'); // Assign to global
-clearCustomTimeBtn = document.getElementById('clear-custom-time'); // Assign to global
 
 modeOptimalTimesBtn.addEventListener('click', () => {
     currentDisplayMode = 'optimal';
     modeOptimalTimesBtn.classList.add('selected');
     modeHourlySlotsBtn.classList.remove('selected');
-    customUtcTimeInputEl.value = ''; // Clear custom time when switching modes
     updateAvailabilitySummary();
 });
 
@@ -2469,21 +2489,6 @@ modeHourlySlotsBtn.addEventListener('click', () => {
     currentDisplayMode = 'hourly';
     modeHourlySlotsBtn.classList.add('selected');
     modeOptimalTimesBtn.classList.remove('selected');
-    customUtcTimeInputEl.value = ''; // Clear custom time when switching modes
-    updateAvailabilitySummary();
-});
-
-// Debounce for custom time input to avoid too many updates
-customUtcTimeInputEl.addEventListener('input', debounce(() => {
-    // When custom time is typed, clear any selected slot button
-    globalSelectedTimeSlotIndex = -1; 
-    updateAvailabilitySummary();
-}, 300)); // Debounce by 300ms
-
-clearCustomTimeBtn.addEventListener('click', () => {
-    if (customUtcTimeInputEl) {
-        customUtcTimeInputEl.value = '';
-    }
     updateAvailabilitySummary();
 });
 
